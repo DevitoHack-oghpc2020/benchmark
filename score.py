@@ -118,4 +118,31 @@ for fork in repos:
     os.chdir("../")
 
 
-# TODO: use info in mapper to update league table
+if not os.path.isdir("DevitoHack-oghpc2020.github.io"):
+    clone_cmd = "git clone %s %s"%(repos[fork], fork)
+    subprocess.call("git clone https://github.com/DevitoHack-oghpc2020/DevitoHack-oghpc2020.github.io.git".split())
+
+os.chdir("DevitoHack-oghpc2020.github.io")
+subprocess.call("git pull origin master")
+
+html = open("index.html")
+html.write("""<html>
+  <head>
+    <title>Hackathon league tabke</title>
+  </head>
+  <body>
+      WIP for https://github.com/DevitoHack-oghpc2020/starter
+      <table style="width:100%">
+""")
+for fork in mapper:
+    html.write("<tr><th>%s</th><th>%.1f GPts/s</th><th>%.1f GPts/s</th></tr>"%(fork, mappers[fork]["acoustic"]["perf"], mappers[fork]["tti"]["perf"]))
+html.write(""" </body>
+</html>
+""")
+subprocess.call("git add index.html".split())
+subprocess.call("git commit -m \"update\"".split())
+subprocess.call("git push".split())
+
+
+
+
