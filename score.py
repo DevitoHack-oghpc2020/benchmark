@@ -37,14 +37,41 @@ def score(submission):
 
     return scores
 
-assignment = "/tmp/oghpc-02-24-2020-12-28-32"
+import os
+import urllib.request
+import json
+import subprocess
 
-os.chdir(assignment)
+origin = "https://github.com/DevitoHack-oghpc2020/starter"
+user = "DevitoHack-oghpc2020"
+repo = "starter"
+forks = []
 
-submissions = glob.glob("*")
+github_url='https://api.github.com/repos/%s/%s/forks'
+resp = urllib.request.urlopen(github_url % (user, repo))
+if resp.code == 200:
+    content = resp.read()
+    data = json.loads(content)
+    for remote in data:
+        forks.append(remote["owner"]["login"])
 
-scores = {}
-for submission in submissions:
-    scores[submission] = score(submission)
+print("forks = ", forks)
 
-print(scores)
+repos = {"devito":"%s.git"%origin}
+for fork in forks:
+    repos[fork] = "https://github.com/%s/starter.git"%fork
+
+for fork in repos:
+    if not os.path.isdir(repo):
+        clone_cmd = "git clone %s %s"%(repos[fork], fork)
+        subprocess.call(clone_cmd.split())
+    os.chdir(fork)
+    subprocess.call("git pull".split())
+
+    # what commands to run to evaluate the benchmarks with the pushed manually updated code?
+    # parse output, collect results
+
+    os.chdir("../")
+
+print(repos)
+#         origin = subprocess.check_output(origin_cmd).strip()
