@@ -124,6 +124,7 @@ if not os.path.isdir("DevitoHack-oghpc2020.github.io"):
 os.chdir("DevitoHack-oghpc2020.github.io")
 subprocess.call("git pull origin master")
 
+# <Vitor's stuff to go here>
 html = open("index.html")
 html.write("""<html>
   <head>
@@ -138,6 +139,9 @@ for fork in mapper:
 html.write(""" </body>
 </html>
 """)
+html.close()
+# </Vitors stuff>
+
 subprocess.call("git add index.html".split())
 subprocess.call("git commit -m \"update\"".split())
 subprocess.call("git push".split())
