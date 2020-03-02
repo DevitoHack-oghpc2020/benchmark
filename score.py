@@ -119,7 +119,6 @@ for fork in repos:
 
 
 if not os.path.isdir("DevitoHack-oghpc2020.github.io"):
-    clone_cmd = "git clone %s %s"%(repos[fork], fork)
     subprocess.call("git clone https://github.com/DevitoHack-oghpc2020/DevitoHack-oghpc2020.github.io.git".split())
 
 os.chdir("DevitoHack-oghpc2020.github.io")
