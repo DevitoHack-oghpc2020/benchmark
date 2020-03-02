@@ -10,11 +10,12 @@ import re
 import subprocess
 from shutil import copy
 from tempfile import gettempdir
-
+from utils import generate_score_html
 
 # Detect (or create) Devito JIT cache dir
 tempdir = gettempdir()
-jitcachedir = [i for i in os.listdir(tempdir) if i.startswith('devito-jitcache')]
+jitcachedir = [i for i in os.listdir(
+    tempdir) if i.startswith('devito-jitcache')]
 if len(jitcachedir) == 0:
     # Create JITcache dir as Devito would normally do
     jitcachedir = os.path.join(tempdir, 'devito-jitcache-uid%s' % os.getuid())
@@ -53,7 +54,7 @@ for fork in repos:
 
     # Clone fork
     if not os.path.isdir(fork):
-        clone_cmd = "git clone %s %s"%(repos[fork], fork)
+        clone_cmd = "git clone %s %s" % (repos[fork], fork)
         subprocess.call(clone_cmd.split())
 
     os.chdir(fork)
@@ -109,8 +110,10 @@ for fork in repos:
                 if i.startswith('norm'):
                     err = mapper[fork][problem]['err']
                     fname = re.search(r'\((.*?)\)', i).group(1)
-                    computed, expected, delta = re.findall(r"[-+]?\d*\.\d+|\d+", i)
-                    err[fname] = (float(computed), float(expected), float(delta))
+                    computed, expected, delta = re.findall(
+                        r"[-+]?\d*\.\d+|\d+", i)
+                    err[fname] = (float(computed), float(
+                        expected), float(delta))
         except:
             # Hopefully we only end up here because the benchmark was never run by the fork
             pass
@@ -118,34 +121,23 @@ for fork in repos:
     os.chdir("../")
 
 
+print(mapper)
+
 if not os.path.isdir("DevitoHack-oghpc2020.github.io"):
-    subprocess.call("git clone https://github.com/DevitoHack-oghpc2020/DevitoHack-oghpc2020.github.io.git".split())
+    subprocess.call(
+        "git clone https://github.com/DevitoHack-oghpc2020/DevitoHack-oghpc2020.github.io.git".split())
 
 os.chdir("DevitoHack-oghpc2020.github.io")
-subprocess.call("git pull origin master")
+# rint(os.getcwd())
+subprocess.call("git pull origin master".split())
+
 
 # <Vitor's stuff to go here>
-html = open("index.html")
-html.write("""<html>
-  <head>
-    <title>Hackathon league tabke</title>
-  </head>
-  <body>
-      WIP for https://github.com/DevitoHack-oghpc2020/starter
-      <table style="width:100%">
-""")
-for fork in mapper:
-    html.write("<tr><th>%s</th><th>%.1f GPts/s</th><th>%.1f GPts/s</th></tr>"%(fork, mappers[fork]["acoustic"]["perf"], mappers[fork]["tti"]["perf"]))
-html.write(""" </body>
-</html>
-""")
-html.close()
+os.chdir("../")
+generate_score_html(mapper)
+os.chdir("DevitoHack-oghpc2020.github.io")
 # </Vitors stuff>
 
 subprocess.call("git add index.html".split())
 subprocess.call("git commit -m \"update\"".split())
 subprocess.call("git push".split())
-
-
-
-
