@@ -11,8 +11,7 @@ acoustic_table = """
                 <th class="cell100 column1">Username</th>
                 <th class="cell100 column2">Time (s)</th>
                 <th class="cell100 column3">Perf (Gpts/s)</th>
-                <th class="cell100 column4">rec err delta</th>
-                <th class="cell100 column5">u err delta</th>
+                <th class="cell100 column4">𝚫 err</th>
             </tr>
         </thead>
     </table>
@@ -36,9 +35,7 @@ tti_table = """
                 <th class="cell100 column1">Username</th>
                 <th class="cell100 column2">Time (s)</th>
                 <th class="cell100 column3">Perf (Gpts/s)</th>
-                <th class="cell100 column4">rec err delta</th>
-                <th class="cell100 column5">u err delta</th>
-                <th class="cell100 column6">v err delta</th>
+                <th class="cell100 column4">𝚫 err</th>
             </tr>
         </thead>
     </table>
@@ -59,7 +56,6 @@ row_acoustic_template = """
         <td class="cell100 column2">{1}</td>
         <td class="cell100 column3">{2}</td>
         <td class="cell100 column4">{3}</td>
-        <td class="cell100 column5">{4}</td>
     </tr>
     """
 
@@ -69,8 +65,6 @@ row_tti_template = """
         <td class="cell100 column2">{1}</td>
         <td class="cell100 column3">{2}</td>
         <td class="cell100 column4">{3}</td>
-        <td class="cell100 column5">{4}</td>
-        <td class="cell100 column6">{5}</td>
     </tr>
     """
 
@@ -93,15 +87,15 @@ def json_to_table(data, type):
             content = content + row_acoustic_template.format(user,
                                                              data[user][type]['time'],
                                                              data[user][type]['perf'],
-                                                             data[user][type]['err']['rec'][2],
-                                                             data[user][type]['err']['u'][2])
+                                                             '(rec = ' + str(data[user][type]['err']['rec'][2]) + '; ' +
+                                                             'u = ' + str(data[user][type]['err']['u'][2]) + ')')
         elif type == 'tti':
             content = content + row_tti_template.format(user,
                                                         data[user][type]['time'],
                                                         data[user][type]['perf'],
-                                                        data[user][type]['err']['rec'][2],
-                                                        data[user][type]['err']['u'][2],
-                                                        data[user][type]['err']['v'][2])
+                                                        '(rec = ' + str(data[user][type]['err']['rec'][2]) + '; ' +
+                                                        'u = ' + str(data[user][type]['err']['u'][2]) + '; ' +
+                                                        'v = ' + str(data[user][type]['err']['v'][2]) + ')')
 
     return table.format(content)
 
