@@ -1,7 +1,7 @@
 import json
 import sys
 from collections import OrderedDict
-
+from datetime import datetime
 
 acoustic_table = """
 <div class="table100-head">
@@ -112,12 +112,19 @@ def generate_score_html(data):
     acoustic = json_to_table(data, 'acoustic')
     tti = json_to_table(data, 'tti')
 
+    # datetime object containing current date and time
+    now = datetime.now()
+    # dd/mm/YY H:M:S
+    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+
     with open('score_template.html') as file_template:
 
         template = str(file_template.read())
 
         template = template.replace("_acoustic_table_", acoustic)
         template = template.replace("_tti_table_", tti)
+        template = template.replace("_current_time_", dt_string)
+			
 
     output_file = open("DevitoHack-oghpc2020.github.io/index.html", 'w')
     output_file.write(template)
