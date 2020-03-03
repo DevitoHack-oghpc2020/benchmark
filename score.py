@@ -90,7 +90,7 @@ def update_fork(user, repo):
 
 @cached
 def benchmark(commit_hash, user, mapper):
-    print("*** Benchmarking user `%s` ***" % user)
+    print("*** Benchmarking user `%s` " % user, commit_hash)
 
     os.chdir(user)
 
