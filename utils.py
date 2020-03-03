@@ -82,20 +82,26 @@ def json_to_table(data, type):
     for row in a:
 
         user = row[0]
+        mapper = data[user][type]
 
         if type == 'acoustic':
-            content = content + row_acoustic_template.format(user,
-                                                             data[user][type]['time'],
-                                                             data[user][type]['perf'],
-                                                             '(rec = ' + str(data[user][type]['err']['rec'][2]) + '; ' +
-                                                             'u = ' + str(data[user][type]['err']['u'][2]) + ')')
+            content = content + row_acoustic_template.format(
+                user,
+                mapper['time'],
+                mapper['perf'],
+                'None' if not mapper['err'] else ('(rec = %s ; u = %s)' %
+                                                  (str(mapper['err']['rec'][2]),
+                                                   str(mapper['err']['u'][2])))
+            )
         elif type == 'tti':
-            content = content + row_tti_template.format(user,
-                                                        data[user][type]['time'],
-                                                        data[user][type]['perf'],
-                                                        '(rec = ' + str(data[user][type]['err']['rec'][2]) + '; ' +
-                                                        'u = ' + str(data[user][type]['err']['u'][2]) + '; ' +
-                                                        'v = ' + str(data[user][type]['err']['v'][2]) + ')')
+            content = content + row_tti_template.format(
+                user,
+                mapper['time'],
+                mapper['perf'],
+                'None' if not mapper['err'] else ('(rec = %s ; u = %s ; v = %s)' %
+                                                  (str(mapper['err']['rec'][2]),
+                                                   str(mapper['err']['u'][2]),
+                                                   str(mapper['err']['v'][2]))))
 
     return table.format(content)
 
