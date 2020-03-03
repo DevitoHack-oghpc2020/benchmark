@@ -72,23 +72,26 @@ def json_to_table(data, type):
     elif type == 'tti':
         table = tti_table
 
+    a = sorted(data.items(), key=lambda x: x[1][type]['time'])
     content = ''
 
-    for user in data:
+    for row in a:
+
+        user = row[0]
 
         if type == 'acoustic':
             content = content + row_acoustic_template.format(user,
                                                              data[user][type]['time'],
                                                              data[user][type]['perf'])
-                                                             #data[user][type]['err']['rec'][2],
-                                                             #data[user][type]['err']['u'][2])
+            # data[user][type]['err']['rec'][2],
+            # data[user][type]['err']['u'][2])
         elif type == 'tti':
             content = content + row_tti_template.format(user,
                                                         data[user][type]['time'],
                                                         data[user][type]['perf'])
-                                                        #data[user][type]['err']['rec'][2],
-                                                        #data[user][type]['err']['u'][2],
-                                                        #data[user][type]['err']['v'][2])
+            # data[user][type]['err']['rec'][2],
+            # data[user][type]['err']['u'][2],
+            # data[user][type]['err']['v'][2])
 
     return table.format(content)
 

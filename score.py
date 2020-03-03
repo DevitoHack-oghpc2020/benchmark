@@ -121,8 +121,6 @@ for fork in repos:
     os.chdir("../")
 
 
-print(mapper)
-
 if not os.path.isdir("DevitoHack-oghpc2020.github.io"):
     subprocess.call(
         "git clone https://github.com/DevitoHack-oghpc2020/DevitoHack-oghpc2020.github.io.git".split())
