@@ -3,7 +3,6 @@ Run benchmarks for all participants.
 """
 
 import os
-import subprocess
 import urllib.request
 import json
 import re
@@ -11,56 +10,89 @@ import subprocess
 from shutil import copy
 from tempfile import gettempdir
 from utils import generate_score_html
+from memoization import cached
 
 # Detect (or create) Devito JIT cache dir
-tempdir = gettempdir()
-jitcachedir = [i for i in os.listdir(
-    tempdir) if i.startswith('devito-jitcache')]
-if len(jitcachedir) == 0:
-    # Create JITcache dir as Devito would normally do
-    jitcachedir = os.path.join(tempdir, 'devito-jitcache-uid%s' % os.getuid())
-    os.makedirs(jitcachedir, exist_ok=True)
-elif len(jitcachedir) == 1:
-    jitcachedir = os.path.join(tempdir, jitcachedir.pop())
-else:
-    raise ValueError("Multiple JIT cache dirs found ?")
-print("jitcache dir =", jitcachedir)
+def get_jitcachedir():
+    tempdir = gettempdir()
+    jitcachedir = [i for i in os.listdir(
+        tempdir) if i.startswith('devito-jitcache')]
+    if len(jitcachedir) == 0:
+        # Create JITcache dir as Devito would normally do
+        jitcachedir = os.path.join(tempdir, 'devito-jitcache-uid%s' % os.getuid())
+        os.makedirs(jitcachedir, exist_ok=True)
+    elif len(jitcachedir) == 1:
+        jitcachedir = os.path.join(tempdir, jitcachedir.pop())
+    else:
+        raise ValueError("Multiple JIT cache dirs found ?")
+    print("jitcache dir =", jitcachedir)
+    return jitcachedir
 
+# Get a dict of all forks {username:repo}
+def get_forks():
+    origin = "https://github.com/DevitoHack-oghpc2020/starter"
+    user = "DevitoHack-oghpc2020"
+    repo = "starter"
+    users = []
 
-# Detect all forks
-origin = "https://github.com/DevitoHack-oghpc2020/starter"
-user = "DevitoHack-oghpc2020"
-repo = "starter"
-forks = []
+    github_url = 'https://api.github.com/repos/%s/%s/forks'
+    resp = urllib.request.urlopen(github_url % (user, repo))
+    if resp.code == 200:
+        content = resp.read()
+        data = json.loads(content)
+        for remote in data:
+            users.append(remote["owner"]["login"])
 
-github_url = 'https://api.github.com/repos/%s/%s/forks'
-resp = urllib.request.urlopen(github_url % (user, repo))
-if resp.code == 200:
-    content = resp.read()
-    data = json.loads(content)
-    for remote in data:
-        forks.append(remote["owner"]["login"])
+    print("users = ", users)
 
-print("forks = ", forks)
+    forks = {"devito": "%s.git" % origin}
+    for user in users:
+        forks[user] = "https://github.com/%s/starter.git" % user
 
-repos = {"devito": "%s.git" % origin}
-for fork in forks:
-    repos[fork] = "https://github.com/%s/starter.git" % fork
+    return forks
 
-# Run benchmarks
-mapper = {}
-for fork in repos:
-    print("*** Benchmarking user `%s` ***" % fork)
+def publish_results(mapper):
+    if not os.path.isdir("DevitoHack-oghpc2020.github.io"):
+        subprocess.call(
+            "git clone https://github.com/DevitoHack-oghpc2020/DevitoHack-oghpc2020.github.io.git".split())
 
-    # Clone fork
-    if not os.path.isdir(fork):
-        clone_cmd = "git clone %s %s" % (repos[fork], fork)
+    os.chdir("DevitoHack-oghpc2020.github.io")
+    subprocess.call("git pull origin master".split())
+
+    os.chdir("../")
+    generate_score_html(mapper)
+    os.chdir("DevitoHack-oghpc2020.github.io")
+
+    subprocess.call("git add index.html".split())
+    subprocess.call("git commit -m \"update\"".split())
+    subprocess.call("git push".split())
+    os.chdir("../") 
+
+    return
+
+def update_fork(user, repo):
+   # Clone fork
+    if not os.path.isdir(user):
+        clone_cmd = "git clone %s %s" % (repo, user)
         subprocess.call(clone_cmd.split())
 
-    os.chdir(fork)
+    os.chdir(user)
 
     # Update fork
     subprocess.call("git pull".split())
+
+    output = subprocess.run("git rev-parse --verify HEAD".split(),
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    commit_hash = output.stdout.decode("utf-8").strip()
+    os.chdir("../")
+
+    return commit_hash
+
+@cached
+def benchmark(commit_hash, user, mapper):
+    print("*** Benchmarking user `%s` ***" % user)
+
+    os.chdir(user)
 
     # Reset environment
     found = [i for i in os.environ if i.startswith('DEVITO_')]
@@ -68,9 +100,9 @@ for fork in repos:
         del os.environ[i]
 
     if not os.path.exists('env.py'):
-        print("Couldn't find `env.py`, skipping `%s` ..." % fork)
+        print("Couldn't find `env.py`, skipping `%s` ..." % user)
         os.chdir("../")
-        continue
+        return
 
     # Set environment based on the fork's env.sh
     environ = eval(open("env.py").read())
@@ -87,10 +119,10 @@ for fork in repos:
         copy(os.path.join('edited-files', i), jitcachedir)
 
     # Run experiments
-    mapper[fork] = {}
+    mapper[user] = {}
     for problem in ['acoustic', 'tti']:
         # Populate with dummy values
-        mapper[fork][problem] = {
+        mapper[user][problem] = {
             'time': 0,  # Runtime in seconds
             'perf': 0,  # Performance in GPoints/s
             'err': {}
@@ -104,11 +136,11 @@ for fork in repos:
         try:
             for i in output:
                 if i.startswith('Operator `Forward` run') or i.startswith('Operator `ForwardTTI` run'):
-                    mapper[fork][problem]['time'] = float(i.split()[4])
+                    mapper[user][problem]['time'] = float(i.split()[4])
                 if 'FD-GPts/s' in i:
-                    mapper[fork][problem]['perf'] = float(i.split()[2])
+                    mapper[user][problem]['perf'] = float(i.split()[2])
                 if i.startswith('norm'):
-                    err = mapper[fork][problem]['err']
+                    err = mapper[user][problem]['err']
                     fname = re.search(r'\((.*?)\)', i).group(1)
                     computed, expected, delta = re.findall(
                         r"[-+]?\d*\.\d+|\d+", i)
@@ -120,22 +152,15 @@ for fork in repos:
 
     os.chdir("../")
 
+jitcachedir = get_jitcachedir()
+mapper = {}
 
-if not os.path.isdir("DevitoHack-oghpc2020.github.io"):
-    subprocess.call(
-        "git clone https://github.com/DevitoHack-oghpc2020/DevitoHack-oghpc2020.github.io.git".split())
+# Run benchmarks
+while True:
+    forks = get_forks()
 
-os.chdir("DevitoHack-oghpc2020.github.io")
-# rint(os.getcwd())
-subprocess.call("git pull origin master".split())
+    for user in forks:
+        commit_hash = update_fork(user, forks[user])
+        benchmark(commit_hash, user, mapper)
 
-
-# <Vitor's stuff to go here>
-os.chdir("../")
-generate_score_html(mapper)
-os.chdir("DevitoHack-oghpc2020.github.io")
-# </Vitors stuff>
-
-subprocess.call("git add index.html".split())
-subprocess.call("git commit -m \"update\"".split())
-subprocess.call("git push".split())
+    publish_results(mapper)
