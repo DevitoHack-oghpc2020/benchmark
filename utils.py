@@ -68,7 +68,6 @@ row_tti_template = """
     </tr>
     """
 
-
 def json_to_table(data, type):
 
     if type == 'acoustic':
@@ -76,15 +75,16 @@ def json_to_table(data, type):
     elif type == 'tti':
         table = tti_table
 
-    a = sorted(data.items(), key=lambda x: x[1][type]['time'])
+    sorted_items = sorted(data.items(), key=lambda x: x[1][type]['time'])
     content = ''
 
-    for row in a:
+    for row in sorted_items:
 
         user = row[0]
         mapper = data[user][type]
 
-        if type == 'acoustic':
+        # time == 0 means that the user didn't run this case
+        if type == 'acoustic' and mapper['time'] > 0:
             content = content + row_acoustic_template.format(
                 user,
                 mapper['time'],
@@ -93,15 +93,16 @@ def json_to_table(data, type):
                                                   (str(mapper['err']['rec'][2]),
                                                    str(mapper['err']['u'][2])))
             )
-        elif type == 'tti':
+        elif type == 'tti' and mapper['time'] > 0:
             content = content + row_tti_template.format(
                 user,
                 mapper['time'],
-                mapper['perf'],
+                mapper['perf'], 
                 'None' if not mapper['err'] else ('(rec = %s ; u = %s ; v = %s)' %
                                                   (str(mapper['err']['rec'][2]),
                                                    str(mapper['err']['u'][2]),
                                                    str(mapper['err']['v'][2]))))
+
 
     return table.format(content)
 
