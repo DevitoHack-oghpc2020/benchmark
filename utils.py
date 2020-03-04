@@ -1,4 +1,6 @@
 import json
+import os
+from subprocess import Popen, PIPE
 import sys
 from collections import OrderedDict
 from datetime import datetime
@@ -12,6 +14,7 @@ table_template = """
                 <th class="cell100 column2">Time (s)</th>
                 <th class="cell100 column3">Perf (Gpts/s)</th>
                 <th class="cell100 column4">𝚫 err</th>
+                <th class="cell100 column5">Hash</th>
             </tr>
         </thead>
     </table>
@@ -32,6 +35,7 @@ row_acoustic_template = """
         <td class="cell100 column2">{1}</td>
         <td class="cell100 column3">{2}</td>
         <td class="cell100 column4">{3}</td>
+        <td class="cell100 column5">{4}</td>
     </tr>
     """
 
@@ -41,9 +45,19 @@ row_tti_template = """
         <td class="cell100 column2">{1}</td>
         <td class="cell100 column3">{2}</td>
         <td class="cell100 column4">{3}</td>
+        <td class="cell100 column4">{4}</td>
     </tr>
     """
 
+
+def get_commit_hash(user):
+    os.chdir(user)
+
+    output = Popen("git rev-parse HEAD".split(), stdout=PIPE).communicate()[0]
+
+    os.chdir("../")
+
+    return output
 
 def json_to_table(data, type):
 
@@ -54,6 +68,7 @@ def json_to_table(data, type):
     for row in sorted_items:
 
         user = row[0]
+        git_hash = get_commit_hash(user)
         mapper = data[user][type]
 
         # time == 0 means that the user didn't run this case
@@ -64,7 +79,8 @@ def json_to_table(data, type):
                 mapper['perf'],
                 'None' if not mapper['err'] else ('(rec = %s ; u = %s)' %
                                                   (str(mapper['err']['rec'][2]),
-                                                   str(mapper['err']['u'][2])))
+                                                   str(mapper['err']['u'][2]))),
+                git_hash
             )
         elif type == 'tti' and mapper['time'] > 0:
             content = content + row_tti_template.format(
@@ -74,7 +90,8 @@ def json_to_table(data, type):
                 'None' if not mapper['err'] else ('(rec = %s ; u = %s ; v = %s)' %
                                                   (str(mapper['err']['rec'][2]),
                                                    str(mapper['err']['u'][2]),
-                                                   str(mapper['err']['v'][2]))))
+                                                   str(mapper['err']['v'][2]))),
+                git_hash)
 
     return table.format(content)
 
