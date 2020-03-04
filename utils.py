@@ -53,7 +53,8 @@ row_tti_template = """
 def get_commit_hash(user):
     os.chdir(user)
 
-    output = Popen("git rev-parse HEAD".split(), stdout=PIPE).communicate()[0]
+    output = Popen("git rev-parse --short HEAD".split(), stdout=PIPE).communicate()[0]
+    output = output.decode("utf-8").strip()
 
     os.chdir("../")
 
