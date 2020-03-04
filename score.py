@@ -13,13 +13,16 @@ from utils import generate_score_html
 from memoization import cached
 
 # Detect (or create) Devito JIT cache dir
+
+
 def get_jitcachedir():
     tempdir = gettempdir()
     jitcachedir = [i for i in os.listdir(
         tempdir) if i.startswith('devito-jitcache')]
     if len(jitcachedir) == 0:
         # Create JITcache dir as Devito would normally do
-        jitcachedir = os.path.join(tempdir, 'devito-jitcache-uid%s' % os.getuid())
+        jitcachedir = os.path.join(
+            tempdir, 'devito-jitcache-uid%s' % os.getuid())
         os.makedirs(jitcachedir, exist_ok=True)
     elif len(jitcachedir) == 1:
         jitcachedir = os.path.join(tempdir, jitcachedir.pop())
@@ -29,6 +32,8 @@ def get_jitcachedir():
     return jitcachedir
 
 # Get a dict of all forks {username:repo}
+
+
 def get_forks():
     origin = "https://github.com/DevitoHack-oghpc2020/starter"
     user = "DevitoHack-oghpc2020"
@@ -51,6 +56,7 @@ def get_forks():
 
     return forks
 
+
 def publish_results(mapper):
     if not os.path.isdir("DevitoHack-oghpc2020.github.io"):
         subprocess.call(
@@ -66,9 +72,10 @@ def publish_results(mapper):
     subprocess.call("git add index.html".split())
     subprocess.call("git commit -m \"update\"".split())
     subprocess.call("git push".split())
-    os.chdir("../") 
+    os.chdir("../")
 
     return
+
 
 def update_fork(user, repo):
    # Clone fork
@@ -87,6 +94,7 @@ def update_fork(user, repo):
     os.chdir("../")
 
     return commit_hash
+
 
 @cached
 def benchmark(commit_hash, user, mapper):
@@ -149,8 +157,10 @@ def benchmark(commit_hash, user, mapper):
         except:
             # Hopefully we only end up here because the benchmark was never run by the fork
             pass
-
+        
+    # Goes back to main dir
     os.chdir("../")
+
 
 jitcachedir = get_jitcachedir()
 mapper = {}
