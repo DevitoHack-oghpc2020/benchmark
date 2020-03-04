@@ -157,6 +157,9 @@ def benchmark(commit_hash, user, mapper):
         except:
             # Hopefully we only end up here because the benchmark was never run by the fork
             pass
+        
+    # Goes back to main dir
+    os.chdir("../")
 
 
 jitcachedir = get_jitcachedir()
